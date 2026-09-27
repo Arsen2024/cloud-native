@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Car struct {
@@ -186,10 +187,95 @@ func deleteCar(w http.ResponseWriter, id int) {
 	})
 }
 
+func ioHandler(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(1 * time.Second)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "I/O operation completed",
+	})
+}
+
+func heavyComputation(iterations int) int64 {
+	var counter int64
+
+	for i := 0; i < iterations; i++ {
+		counter++
+	}
+
+	return counter
+}
+
+func cpuHandler(w http.ResponseWriter, r *http.Request) {
+	const iterations = 5_000_000_000
+
+	counter := heavyComputation(iterations)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "CPU operation completed",
+		"counter": counter,
+	})
+}
+
+func cpuSequentialHandler(w http.ResponseWriter, r *http.Request) {
+	const operations = 4
+	const iterations = 1_000_000_000
+
+	var total int64
+
+	for i := 0; i < operations; i++ {
+		total += heavyComputation(iterations)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Sequential CPU operation completed",
+		"counter": total,
+	})
+}
+
+func cpuGoroutinesHandler(w http.ResponseWriter, r *http.Request) {
+	const operations = 4
+	const iterations = 1_000_000_000
+
+	results := make(chan int64, operations)
+
+	for i := 0; i < operations; i++ {
+		go func() {
+			results <- heavyComputation(iterations)
+		}()
+	}
+
+	var total int64
+
+	for i := 0; i < operations; i++ {
+		total += <-results
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Goroutines CPU operation completed",
+		"counter": total,
+	})
+}
+
 func main() {
 	http.HandleFunc("/health", healthHandler)
 	http.HandleFunc("/cars", carsHandler)
 	http.HandleFunc("/cars/", carHandler)
+	http.HandleFunc("/io", ioHandler)
+	http.HandleFunc("/cpu", cpuHandler)
+	http.HandleFunc("/cpu-sequential", cpuSequentialHandler)
+	http.HandleFunc("/cpu-goroutines", cpuGoroutinesHandler)
 
 	println("Go server is running on http://localhost:8080")
 

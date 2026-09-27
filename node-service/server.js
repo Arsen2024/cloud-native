@@ -134,6 +134,35 @@ const server = http.createServer((req, res) => {
   return;
   }
     
+
+  if (req.method === "GET" && req.url === "/io") {
+  setTimeout(() => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      message: "I/O operation completed",
+    }));
+  }, 1000);
+
+  return;
+  }
+
+
+  if (req.method === "GET" && req.url === "/cpu") {
+  let counter = 0;
+
+  for (let i = 0; i < 1_000_000_000; i++) {
+    counter++;
+  }
+
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(JSON.stringify({
+    message: "CPU operation completed",
+    counter: counter,
+  }));
+
+  return;
+  }
+
   if (req.method === "GET" && req.url === "/health") {
     res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ status: "ok" }));
