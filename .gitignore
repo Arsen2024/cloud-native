@@ -2,6 +2,10 @@
 node_modules/
 npm-debug.log*
 
+processed-cars.txt
+# Generated large CSV files
+/node-service/data/cars.csv
+
 # Go
 *.exe
 *.test
